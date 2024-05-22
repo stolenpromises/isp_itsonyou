@@ -1,190 +1,149 @@
-import os
 import pandas as pd
-import re
-from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-def parse_traceroute_log(file_path):
+def suggest_high_latency_periods(df_total_latency, threshold, top_n=10):
     """
-    Parse a single traceroute log file.
+    Suggest high latency periods based on the defined threshold.
 
     Parameters
     ----------
-    file_path : str
-        Path to the traceroute log file.
+    df_total_latency : pd.DataFrame
+        DataFrame containing total average latency data.
+    threshold : float
+        Latency threshold to identify high latency periods.
+    top_n : int, optional
+        Number of top high latency periods to suggest (default is 10).
 
     Returns
     -------
-    list of dict
-        Parsed data containing hop information.
+    pd.DataFrame
+        DataFrame containing the suggested high latency periods.
     """
-    with open(file_path, 'r') as file:
-        lines = file.readlines()
+    high_latency_periods = df_total_latency[df_total_latency['total_avg_latency'] > threshold]
+    print("Suggested high latency periods:")
+    print(high_latency_periods.head(top_n))
+    return high_latency_periods.head(top_n)
 
-    # Extract timestamp from the filename
-    filename = os.path.basename(file_path)
-    timestamp_str = filename.split('_')[1].split('.')[0]
-    timestamp = datetime.strptime(timestamp_str, '%Y%m%d%H%M%S')
-    
-    # Extract hop data using regex pattern matching
-    hop_data = []
-    hop_pattern = re.compile(r"^\s*(\d+)\.\|\--\s*([^ ]+)\s+([\d\.]+)%\s+(\d+)\s+([\d\.]+)\s+([\d\.]+)\s+([\d\.]+)\s+([\d\.]+)\s+([\d\.]+)")
-    
-    for line in lines:
-        match = hop_pattern.match(line)
-        if match:
-            hop = {
-                'timestamp': timestamp,
-                'hop_number': int(match.group(1)),
-                'host': match.group(2),
-                'loss_percentage': float(match.group(3)),
-                'sent': int(match.group(4)),
-                'last': float(match.group(5)),
-                'avg': float(match.group(6)),
-                'best': float(match.group(7)),
-                'worst': float(match.group(8)),
-                'stdev': float(match.group(9))
-            }
-            hop_data.append(hop)
-    
-    return hop_data
-
-def visualize_high_latency_periods(df_all, df_total_latency, threshold):
+def visualize_high_latency_periods(df_all, high_latency_intervals, print_full_content=False):
     """
     Visualize individual hop latencies for high latency periods.
 
     Parameters
     ----------
-    df_all : DataFrame
+    df_all : pd.DataFrame
         DataFrame containing parsed traceroute data.
-    df_total_latency : DataFrame
-        DataFrame containing total average latency data.
-    threshold : float
-        Latency threshold to identify high latency periods.
+    high_latency_intervals : list of tuples
+        List of tuples, each containing a start and end timestamp for the high latency intervals.
+    print_full_content : bool, optional
+        Flag to print full content of high latency data (default is False).
+
+    Returns
+    -------
+    None
     """
-    high_latency_periods = df_total_latency[df_total_latency['total_avg_latency'] > threshold]
-    print("High latency periods:")
-    print(high_latency_periods)
-
-    for timestamp in high_latency_periods['timestamp']:
-        df_high_latency = df_all[df_all['timestamp'] == timestamp]
-        print(f"\nHigh latency data for {timestamp}:")
-        print(df_high_latency)
-
+    for interval in high_latency_intervals:
+        start_time, end_time = interval
+        df_high_latency = df_all[(df_all['timestamp'] >= start_time) & (df_all['timestamp'] <= end_time)]
+        
+        if print_full_content:
+            print(f"\nHigh latency data for interval {start_time} to {end_time}:")
+            print(df_high_latency)
+        
         plt.figure(figsize=(12, 6))
-        hop_numbers = []
-        avg_latencies = []
-        for hop in df_high_latency['hop_number'].unique():
+        hop_numbers = df_high_latency['hop_number'].unique()
+        avg_latencies = [df_high_latency[df_high_latency['hop_number'] == hop]['avg'].mean() for hop in hop_numbers]
+        
+        for hop in hop_numbers:
             df_hop = df_high_latency[df_high_latency['hop_number'] == hop]
-            hop_numbers.append(hop)
-            avg_latencies.append(df_hop['avg'].values[0])
-            print(f"Plotting data for Hop {hop}:")
-            print(df_hop[['hop_number', 'avg']])
-
-        plt.scatter(hop_numbers, avg_latencies, label=f'Timestamp: {timestamp}')
+            if print_full_content:
+                print(f"Plotting data for Hop {hop}:")
+                print(df_hop[['hop_number', 'avg']])
+        
+        plt.scatter(hop_numbers, avg_latencies, label=f'Interval: {start_time} to {end_time}')
         plt.xlabel('Hop Number')
         plt.ylabel('Average Latency (ms)')
-        plt.title(f'Individual Hop Latencies for High Latency Period: {timestamp}')
+        plt.title(f'Individual Hop Latencies for High Latency Interval: {start_time} to {end_time}')
         plt.legend()
         plt.grid(True)
         plt.xticks(rotation=45)
         plt.tight_layout()
         plt.show()
 
-def suggest_key_intervals(df, std_dev_multiplier=2, min_duration='2T', max_duration='5T'):
+def plot_total_avg_latency_over_time(df_total_latency):
     """
-    Suggest time intervals where latency exceeds a specified threshold for a sustained period.
+    Plot the total average latency over time with dynamic x-axis scaling.
 
     Parameters
     ----------
-    df : DataFrame
+    df_total_latency : pd.DataFrame
         DataFrame containing total average latency data.
-    std_dev_multiplier : float
-        Multiplier for standard deviation to set the threshold.
-    min_duration : str
-        Minimum duration for the sustained period (e.g., '2T' for 2 minutes).
-    max_duration : str
-        Maximum duration for the sustained period (e.g., '5T' for 5 minutes).
 
     Returns
     -------
-    list of tuple
-        List of suggested time intervals.
+    None
     """
-    mean_latency = df['total_avg_latency'].mean()
-    std_dev_latency = df['total_avg_latency'].std()
-    threshold = mean_latency + std_dev_multiplier * std_dev_latency
+    # Convert timestamps to datetime objects
+    df_total_latency['timestamp'] = pd.to_datetime(df_total_latency['timestamp'])
     
-    df['exceeds_threshold'] = df['total_avg_latency'] > threshold
-    df['group'] = (df['exceeds_threshold'] != df['exceeds_threshold'].shift()).cumsum()
-    
-    intervals = []
-    for _, group in df[df['exceeds_threshold']].groupby('group'):
-        if len(group) >= pd.to_timedelta(min_duration) / (df['timestamp'].iloc[1] - df['timestamp'].iloc[0]):
-            start_time = group['timestamp'].min()
-            end_time = group['timestamp'].max()
-            duration = end_time - start_time
-            if pd.to_timedelta(min_duration) <= duration <= pd.to_timedelta(max_duration):
-                intervals.append((start_time, end_time))
-    
-    return intervals[:10]
+    # Plot with dynamic x-axis scaling
+    plt.figure(figsize=(12, 6))
+    plt.plot(df_total_latency['timestamp'], df_total_latency['total_avg_latency'], label='Total Avg Latency')
+    plt.axhline(y=df_total_latency['total_avg_latency'].mean(), color='r', linestyle='--', label='Average Latency')
+    plt.xlabel('Timestamp')
+    plt.ylabel('Total Average Latency (ms)')
+    plt.title('Total Average Latency Over Time')
+    plt.legend()
+    plt.grid(True)
 
-# Directory containing the log files
-extraction_dir = os.path.join('traceroute_logs')
+    # Set dynamic x-axis locator and formatter
+    locator = mdates.AutoDateLocator()
+    formatter = mdates.ConciseDateFormatter(locator)
+    plt.gca().xaxis.set_major_locator(locator)
+    plt.gca().xaxis.set_major_formatter(formatter)
 
-# List all log files
-log_files = [os.path.join(extraction_dir, file) for file in os.listdir(extraction_dir) if file.endswith('.txt')]
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
 
-# Parse each log file and aggregate the data from all available logs
-all_data = []
-for log_file in log_files:
-    all_data.extend(parse_traceroute_log(log_file))
+def main(high_latency_intervals=None, print_full_content=False):
+    """
+    Main function to run the traceroute analysis.
 
-# Create a DataFrame from the aggregated data
-df_all = pd.DataFrame(all_data)
+    Parameters
+    ----------
+    high_latency_intervals : list of tuples, optional
+        List of tuples, each containing a start and end timestamp for the high latency intervals (default is None).
+    print_full_content : bool, optional
+        Flag to print full content of high latency data (default is False).
 
-# Calculate total average latency per timestamp
-df_total_latency = df_all.groupby('timestamp')['avg'].sum().reset_index()
-df_total_latency.columns = ['timestamp', 'total_avg_latency']
+    Returns
+    -------
+    None
+    """
+    # Load the DataFrame
+    df_all_hops = pd.read_csv('/mnt/data/parsed_logs.csv')
 
-# Determine the appropriate x-axis locator based on the time range
-time_range = df_total_latency['timestamp'].max() - df_total_latency['timestamp'].min()
+    # Calculate total average latency
+    df_total_latency = df_all_hops.groupby('timestamp')['avg'].sum().reset_index()
+    df_total_latency.rename(columns={'avg': 'total_avg_latency'}, inplace=True)
 
-if time_range < pd.Timedelta('1 days'):
-    locator = mdates.HourLocator(interval=1)
-    formatter = mdates.DateFormatter('%I %p')
-elif time_range < pd.Timedelta('7 days'):
-    locator = mdates.DayLocator(interval=1)
-    formatter = mdates.DateFormatter('%b %d')
-else:
-    locator = mdates.WeekdayLocator(interval=1)
-    formatter = mdates.DateFormatter('%b %d')
+    # Define latency threshold
+    latency_threshold = df_total_latency['total_avg_latency'].mean() + 2 * df_total_latency['total_avg_latency'].std()
 
-# Plot with dynamic x-axis scaling
-plt.figure(figsize=(12, 6))
-plt.plot(df_total_latency['timestamp'], df_total_latency['total_avg_latency'], label='Total Avg Latency')
-plt.axhline(y=df_total_latency['total_avg_latency'].mean(), color='r', linestyle='--', label='Average Latency')
-plt.xlabel('Timestamp')
-plt.ylabel('Total Average Latency (ms)')
-plt.title('Total Average Latency Over Time')
-plt.legend()
-plt.grid(True)
+    if high_latency_intervals is None:
+        # Suggest high latency periods and plot total average latency over time
+        high_latency_periods = suggest_high_latency_periods(df_total_latency, latency_threshold)
+        plot_total_avg_latency_over_time(df_total_latency)
+    else:
+        # Visualize high latency periods for specified intervals
+        visualize_high_latency_periods(df_all_hops, high_latency_intervals, print_full_content)
+        plot_total_avg_latency_over_time(df_total_latency)
 
-# Set dynamic x-axis locator and formatter
-plt.gca().xaxis.set_major_locator(locator)
-plt.gca().xaxis.set_major_formatter(formatter)
+# Example usage
+# First run (no parameter, suggest high latency intervals)
+# main()
 
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.show()
-
-# Example usage of the new functions
-threshold = 250  # example threshold value for testing
-visualize_high_latency_periods(df_all, df_total_latency, threshold)
-
-# Suggest key time intervals where latency exceeds threshold for a sustained period
-suggested_intervals = suggest_key_intervals(df_total_latency, std_dev_multiplier=2)
-print("Suggested high latency intervals:")
-for start, end in suggested_intervals:
-    print(f"From {start} to {end}")
+# Second run (with specified high latency intervals)
+# Example interval format: [('2024-05-21 23:10', '2024-05-21 23:15')]
+# main(high_latency_intervals=[('2024-05-21 20:16:14', '2024-05-21 20:26:17'), ('2024-05-22 01:57:55', '2024-05-22 02:00:00')], print_full_content=False)

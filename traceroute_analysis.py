@@ -1,4 +1,3 @@
-
 import os
 import pandas as pd
 import re
@@ -6,8 +5,20 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-# Function to parse a single log file
 def parse_traceroute_log(file_path):
+    """
+    Parse a single traceroute log file.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to the traceroute log file.
+
+    Returns
+    -------
+    list of dict
+        Parsed data containing hop information.
+    """
     with open(file_path, 'r') as file:
         lines = file.readlines()
 
@@ -16,7 +27,7 @@ def parse_traceroute_log(file_path):
     timestamp_str = filename.split('_')[1].split('.')[0]
     timestamp = datetime.strptime(timestamp_str, '%Y%m%d%H%M%S')
     
-    # Extract hop data
+    # Extract hop data using regex pattern matching
     hop_data = []
     hop_pattern = re.compile(r"^\s*(\d+)\.\|\--\s*([^ ]+)\s+([\d\.]+)%\s+(\d+)\s+([\d\.]+)\s+([\d\.]+)\s+([\d\.]+)\s+([\d\.]+)\s+([\d\.]+)")
     
@@ -39,8 +50,19 @@ def parse_traceroute_log(file_path):
     
     return hop_data
 
-# Function to visualize individual hop latencies for high latency periods with debugging and scatter plot
 def visualize_high_latency_periods(df_all, df_total_latency, threshold):
+    """
+    Visualize individual hop latencies for high latency periods.
+
+    Parameters
+    ----------
+    df_all : DataFrame
+        DataFrame containing parsed traceroute data.
+    df_total_latency : DataFrame
+        DataFrame containing total average latency data.
+    threshold : float
+        Latency threshold to identify high latency periods.
+    """
     high_latency_periods = df_total_latency[df_total_latency['total_avg_latency'] > threshold]
     print("High latency periods:")
     print(high_latency_periods)
@@ -70,8 +92,26 @@ def visualize_high_latency_periods(df_all, df_total_latency, threshold):
         plt.tight_layout()
         plt.show()
 
-# Function to suggest key time intervals
 def suggest_key_intervals(df, std_dev_multiplier=2, min_duration='2T', max_duration='5T'):
+    """
+    Suggest time intervals where latency exceeds a specified threshold for a sustained period.
+
+    Parameters
+    ----------
+    df : DataFrame
+        DataFrame containing total average latency data.
+    std_dev_multiplier : float
+        Multiplier for standard deviation to set the threshold.
+    min_duration : str
+        Minimum duration for the sustained period (e.g., '2T' for 2 minutes).
+    max_duration : str
+        Maximum duration for the sustained period (e.g., '5T' for 5 minutes).
+
+    Returns
+    -------
+    list of tuple
+        List of suggested time intervals.
+    """
     mean_latency = df['total_avg_latency'].mean()
     std_dev_latency = df['total_avg_latency'].std()
     threshold = mean_latency + std_dev_multiplier * std_dev_latency

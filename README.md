@@ -82,12 +82,15 @@ HOST: nathandebiansecure                      Loss%   Snt   Last   Avg  Best  Wr
 
 3. **Latency Percentiles**:
    - Calculate and visualize latency percentiles (e.g., 95th, 99th).
+
 ## LLM opening prompt
+
 (To be used in event a new conversation needs to be started, ie all context lost)
+
 Assist with software development. This project analyzes network performance issues using traceroute logs. The primary goals are to identify periods of high latency, determine the source of slowdowns, and visualize the data. You should write code to execute in your environment with my logs as test inputs. Later I will execute locally on my debian KDE system. As it sits now, I am executing via w11 vs studio code. We don't want to do too many steps in a single turn. Lets keep it simple.
 
 Begin by extracting the contents of the zip file and reading in the README.md file to understand the project.
-Development is now being conducted alongside your enviroment in VS Studio Code on a w11 system.
+Development is now being conducted alongside your environment in VS Studio Code on a w11 system.
 
 Do not suggest to execute code locally, due to errors in your environment.
 Rather, troubleshoot why the errors in your environment are happening via breaking the process into smaller steps, using print statements, etc.
@@ -95,11 +98,7 @@ We will probably go for a complete reset of the coding environment and/or a new 
 
 With this opening prompt a zip of the current project status has been attached.
 
-1. Extract the project(without adding anything to name, ie no _unzipped or anything. just use the folder isp_itsonyou(via extraction) as the root folder for the project.
+1. Extract the project without adding anything to name, ie no _unzipped or anything. just use the folder isp_itsonyou(via extraction) as the root folder for the project.
 2. Get the README.md file and read it to understand the project.
 3. Sample logs can be found under isp_itsonyou\traceroute_logs first_12_hours_logs.zip
 4. Run a test on a portion of the logs to see if the code is working as expected up to it's last documented functional state.
-
-## Testing
-
-To test the functionality of the new functions, use a threshold of 250ms as demonstrated in the usage examples above.

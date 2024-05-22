@@ -1,3 +1,4 @@
+
 import os
 import pandas as pd
 import re
@@ -38,16 +39,28 @@ def parse_traceroute_log(file_path):
     
     return hop_data
 
-# Function to visualize individual hop latencies for high latency periods
+# Function to visualize individual hop latencies for high latency periods with debugging and scatter plot
 def visualize_high_latency_periods(df_all, df_total_latency, threshold):
     high_latency_periods = df_total_latency[df_total_latency['total_avg_latency'] > threshold]
+    print("High latency periods:")
+    print(high_latency_periods)
 
     for timestamp in high_latency_periods['timestamp']:
         df_high_latency = df_all[df_all['timestamp'] == timestamp]
+        print(f"\nHigh latency data for {timestamp}:")
+        print(df_high_latency)
+
         plt.figure(figsize=(12, 6))
+        hop_numbers = []
+        avg_latencies = []
         for hop in df_high_latency['hop_number'].unique():
             df_hop = df_high_latency[df_high_latency['hop_number'] == hop]
-            plt.plot(df_hop['hop_number'], df_hop['avg'], label=f'Hop {hop}')
+            hop_numbers.append(hop)
+            avg_latencies.append(df_hop['avg'].values[0])
+            print(f"Plotting data for Hop {hop}:")
+            print(df_hop[['hop_number', 'avg']])
+
+        plt.scatter(hop_numbers, avg_latencies, label=f'Timestamp: {timestamp}')
         plt.xlabel('Hop Number')
         plt.ylabel('Average Latency (ms)')
         plt.title(f'Individual Hop Latencies for High Latency Period: {timestamp}')
@@ -78,7 +91,7 @@ def suggest_key_intervals(df, std_dev_multiplier=2, min_duration='2T', max_durat
     return intervals[:10]
 
 # Directory containing the log files
-extraction_dir = os.path.join(extraction_path, 'isp_itsonyou', 'traceroute_logs')
+extraction_dir = os.path.join('traceroute_logs')
 
 # List all log files
 log_files = [os.path.join(extraction_dir, file) for file in os.listdir(extraction_dir) if file.endswith('.txt')]

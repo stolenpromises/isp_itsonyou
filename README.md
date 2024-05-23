@@ -11,6 +11,7 @@ This project analyzes network performance issues using traceroute logs. The prim
 isp_itsonyou/
 │
 ├── traceroute_analysis.py        # Main script for analyzing traceroute logs
+├── log_import.py                 # Script for importing and parsing logs
 ├── streamlit_interface.py        # Streamlit-based user interface for the project
 ├── README.md                     # Project documentation
 │
@@ -58,13 +59,6 @@ HOST: nathandebiansecure                      Loss%   Snt   Last   Avg  Best  Wr
   9.|-- 142.251.60.47                            0.0%    60   11.5  12.3  10.2  14.7   1.3
  10.|-- dns.google                               0.0%    60   10.2  13.2  10.1  52.6   5.3
 ```
-
-## Usage
-
-1. **Extract Logs**: Ensure the log files are extracted into the `traceroute_logs` directory.
-2. **Run Analysis**: Execute the `traceroute_analysis.py` script to analyze the logs.
-3. **Streamlit Interface**: Launch the Streamlit interface by running `streamlit run streamlit_interface.py`.
-
 ## Dependencies
 
 - Python 3.x
@@ -72,7 +66,23 @@ HOST: nathandebiansecure                      Loss%   Snt   Last   Avg  Best  Wr
 - Matplotlib
 - Streamlit
 
-#### Additional Metrics to Implement:
+## NumPy-Style Docstrings
+
+The `traceroute_analysis.py` and `log_import.py` scripts have been updated to include NumPy-style docstrings for better documentation and clarity.
+
+### traceroute_analysis.py
+- **Functions:**
+  - `suggest_high_latency_periods`
+  - `visualize_high_latency_periods`
+  - `plot_total_avg_latency_over_time`
+  - `main`
+
+### log_import.py
+- **Functions:**
+  - `parse_traceroute_log`
+  - `extract_logs`
+
+## Metrics to Implement:
 
 1. **Hop Latency Histograms**:
    - Visualize the distribution of latencies for individual hops.
@@ -83,22 +93,24 @@ HOST: nathandebiansecure                      Loss%   Snt   Last   Avg  Best  Wr
 3. **Latency Percentiles**:
    - Calculate and visualize latency percentiles (e.g., 95th, 99th).
 
-## LLM opening prompt
+## LLM Opening Prompt
 
-(To be used in event a new conversation needs to be started, ie all context lost)
+(To be used in event a new conversation needs to be started, i.e., all context is lost)
 
-Assist with software development. This project analyzes network performance issues using traceroute logs. The primary goals are to identify periods of high latency, determine the source of slowdowns, and visualize the data. You should write code to execute in your environment with my logs as test inputs. Later I will execute locally on my debian KDE system. As it sits now, I am executing via w11 vs studio code. We don't want to do too many steps in a single turn. Lets keep it simple.
+Assist with software development. This project analyzes network performance issues using traceroute logs. The primary goals are to identify periods of high latency, determine the source of slowdowns, and visualize the data. You should write code to execute in your environment with my logs as test inputs. Later I will execute locally on my Debian KDE system. As it sits now, I am executing via Windows 11 and VS Code. We don't want to do too many steps in a single turn. Let's keep it simple.
 
 Begin by extracting the contents of the zip file and reading in the README.md file to understand the project.
-Development is now being conducted alongside your environment in VS Studio Code on a w11 system.
+Development is now being conducted alongside your environment in VS Studio Code on a Windows 11 system.
 
-Do not suggest to execute code locally, due to errors in your environment.
+Do not suggest executing code locally, due to errors in your environment.
 Rather, troubleshoot why the errors in your environment are happening via breaking the process into smaller steps, using print statements, etc.
 We will probably go for a complete reset of the coding environment and/or a new conversation before resorting to local execution on my end.
 
 With this opening prompt a zip of the current project status has been attached.
 
-1. Extract the project without adding anything to name, ie no _unzipped or anything. just use the folder isp_itsonyou(via extraction) as the root folder for the project.
+1. Extract the project without adding anything to the name, i.e., no _unzipped or anything. Just use the folder isp_itsonyou (via extraction) as the root folder for the project.
 2. Get the README.md file and read it to understand the project.
+   - When reading in files, such as README.md, it is not necessary to redisplay them for me in a human readable format. Single line read ins which work for you are all that is needed, in most cases. I don't want to use up too much context window re-displaying text which has already been read in.
+   - When listing the content of log folders after extraction, only list the first 5 or so files. This is to save context window space.
 3. Sample logs can be found under isp_itsonyou\traceroute_logs first_12_hours_logs.zip
 4. Run a test on a portion of the logs to see if the code is working as expected up to it's last documented functional state.

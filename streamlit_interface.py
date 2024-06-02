@@ -111,10 +111,6 @@ if file_upload or selected_folder:
             plt.tight_layout()
             st.pyplot(plt)
 
-    # Calculate total average latency for the entire dataset
-    df_total_latency = df_all_hops.groupby('timestamp')['avg'].sum().reset_index()
-    df_total_latency.rename(columns={'avg': 'total_avg_latency'}, inplace=True)
-
     # Define latency thresholds
     min_latency = st.number_input("Minimum Latency (ms)", min_value=0, value=150)
     max_latency = st.number_input("Maximum Latency (ms)", min_value=0, value=2500)
@@ -127,7 +123,7 @@ if file_upload or selected_folder:
 
     # Option to suggest high latency periods
     if st.checkbox("Suggest High Latency Periods"):
-        high_latency_periods = suggest_high_latency_periods(df_total_latency, min_latency, max_latency, top_n=num_high_latency_periods)
+        high_latency_periods = suggest_high_latency_periods(df_total_filtered_latency, min_latency, max_latency, top_n=num_high_latency_periods)
         st.write(high_latency_periods)
 
     # Option to visualize high latency periods
@@ -144,7 +140,7 @@ if file_upload or selected_folder:
             selected_interval_tuple = (start_time_str, end_time_str)
 
             # Display the filtered data for the selected interval
-            df_high_latency = df_all_hops[(df_all_hops['timestamp'] >= start_time_str) & (df_all_hops['timestamp'] <= end_time_str)]
+            df_high_latency = filtered_df[(filtered_df['timestamp'] >= start_time_str) & (filtered_df['timestamp'] <= end_time_str)]
             st.write(df_high_latency)
 
             # Button to select +/- interval around the high latency period
@@ -152,7 +148,7 @@ if file_upload or selected_folder:
             if st.button("Plot Total Average Latency Over Interval"):
                 start_interval = (datetime.strptime(start_time_str, '%Y-%m-%d %H:%M:%S') - timedelta(minutes=interval_minutes)).strftime('%Y-%m-%d %H:%M:%S')
                 end_interval = (datetime.strptime(end_time_str, '%Y-%m-%d %H:%M:%S') + timedelta(minutes=interval_minutes)).strftime('%Y-%m-%d %H:%M:%S')
-                df_interval_latency = df_all_hops[(df_all_hops['timestamp'] >= start_interval) & (df_all_hops['timestamp'] <= end_interval)]
+                df_interval_latency = filtered_df[(filtered_df['timestamp'] >= start_interval) & (filtered_df['timestamp'] <= end_interval)]
                 
                 # Plot total average latency over the interval
                 df_total_interval_latency = df_interval_latency.groupby('timestamp')['avg'].sum().reset_index()
@@ -161,4 +157,13 @@ if file_upload or selected_folder:
                 plot_total_avg_latency_over_time(df_total_interval_latency)
 
             print("Passing selected high latency interval to visualize_high_latency_periods:", selected_interval_tuple)  # Debug print statement
-           
+            visualize_high_latency_periods(filtered_df, [selected_interval_tuple])
+        else:
+            st.info("No high latency periods to visualize.")
+
+    # Plot total average latency over time for the entire dataset
+    st.header("Total Latency Over Entire Period")
+    plot_total_avg_latency_over_time(df_total_filtered_latency)
+
+else:
+    st.info("Please upload your traceroute logs or select a folder to begin analysis.")

@@ -42,14 +42,22 @@ if file_upload or selected_folder:
     df_total_latency.rename(columns={'avg': 'total_avg_latency'}, inplace=True)
 
     # Define latency threshold
+    min_latency = st.number_input("Minimum Latency (ms)", min_value=0, value=2000)
+    max_latency = st.number_input("Maximum Latency (ms)", min_value=0, value=10000)
     latency_threshold = df_total_latency['total_avg_latency'].mean() + 2 * df_total_latency['total_avg_latency'].std()
 
     # Display options for high latency analysis
     st.header("High Latency Analysis")
 
+    # Option to specify number of high latency periods
+    num_high_latency_periods = st.number_input("Number of High Latency Periods", min_value=1, max_value=100, value=40)
+
     # Option to suggest high latency periods
     if st.checkbox("Suggest High Latency Periods"):
-        high_latency_periods = suggest_high_latency_periods(df_total_latency, latency_threshold)
+        high_latency_periods = suggest_high_latency_periods(df_total_latency, latency_threshold, top_n=num_high_latency_periods)
+        # Apply min and max latency filters
+        high_latency_periods = high_latency_periods[(high_latency_periods['total_avg_latency'] >= min_latency) & 
+                                                    (high_latency_periods['total_avg_latency'] <= max_latency)]
         st.write(high_latency_periods)
 
     # Option to visualize high latency periods

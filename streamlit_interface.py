@@ -54,7 +54,41 @@ if file_upload or selected_folder:
             st.error(f"No CSV file found in the selected folder: {csv_file_path}")
             st.stop()
 
-    # Calculate total average latency
+    # Parse timestamps
+    df_all_hops['timestamp'] = pd.to_datetime(df_all_hops['timestamp'])
+
+    # Extract unique months, weeks, and days for dropdowns
+    df_all_hops['month'] = df_all_hops['timestamp'].dt.to_period('M')
+    df_all_hops['week'] = df_all_hops['timestamp'].dt.to_period('W')
+    df_all_hops['day'] = df_all_hops['timestamp'].dt.to_period('D')
+
+    unique_months = df_all_hops['month'].unique().tolist()
+    unique_weeks = df_all_hops['week'].unique().tolist()
+    unique_days = df_all_hops['day'].unique().tolist()
+
+    # Dropdowns for month, week, and day selection
+    selected_month = st.selectbox("Select Month", unique_months, format_func=lambda x: x.strftime('%Y-%m'))
+    selected_week = st.selectbox("Select Week", unique_weeks, format_func=lambda x: x.strftime('%Y-%W'))
+    selected_day = st.selectbox("Select Day", unique_days, format_func=lambda x: x.strftime('%Y-%m-%d'))
+
+    # Filter data based on the selected time frame
+    if selected_day:
+        filtered_df = df_all_hops[df_all_hops['day'] == selected_day]
+    elif selected_week:
+        filtered_df = df_all_hops[df_all_hops['week'] == selected_week]
+    elif selected_month:
+        filtered_df = df_all_hops[df_all_hops['month'] == selected_month]
+    else:
+        filtered_df = df_all_hops
+
+    # Plot the filtered data
+    df_total_filtered_latency = filtered_df.groupby('timestamp')['avg'].sum().reset_index()
+    df_total_filtered_latency.rename(columns={'avg': 'total_avg_latency'}, inplace=True)
+    
+    st.header("Filtered Latency Over Time")
+    plot_total_avg_latency_over_time(df_total_filtered_latency)
+
+    # Calculate total average latency for the entire dataset
     df_total_latency = df_all_hops.groupby('timestamp')['avg'].sum().reset_index()
     df_total_latency.rename(columns={'avg': 'total_avg_latency'}, inplace=True)
 
@@ -108,7 +142,8 @@ if file_upload or selected_folder:
         else:
             st.info("No high latency periods to visualize.")
 
-    # Plot total average latency over time
+    # Plot total average latency over time for the entire dataset
+    st.header("Total Latency Over Entire Period")
     plot_total_avg_latency_over_time(df_total_latency)
 
 else:

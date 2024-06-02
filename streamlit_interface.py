@@ -2,6 +2,7 @@ import streamlit as st
 import zipfile
 import os
 import pandas as pd
+from datetime import datetime, timedelta
 from traceroute_analysis import suggest_high_latency_periods, visualize_high_latency_periods, plot_total_avg_latency_over_time
 
 # Set page title and layout
@@ -63,6 +64,23 @@ if file_upload or selected_folder:
             # Parse the selected interval string back to tuple
             start_time_str, end_time_str = selected_interval.split(" to ")
             selected_interval_tuple = (start_time_str, end_time_str)
+
+            # Display the filtered data for the selected interval
+            df_high_latency = df_all_hops[(df_all_hops['timestamp'] >= start_time_str) & (df_all_hops['timestamp'] <= end_time_str)]
+            st.write(df_high_latency)
+
+            # Button to select +/- interval around the high latency period
+            interval_minutes = st.number_input("Select +/- Interval (minutes)", min_value=1, max_value=120, value=10)
+            if st.button("Plot Total Average Latency Over Interval"):
+                start_interval = (datetime.strptime(start_time_str, '%Y-%m-%d %H:%M:%S') - timedelta(minutes=interval_minutes)).strftime('%Y-%m-%d %H:%M:%S')
+                end_interval = (datetime.strptime(end_time_str, '%Y-%m-%d %H:%M:%S') + timedelta(minutes=interval_minutes)).strftime('%Y-%m-%d %H:%M:%S')
+                df_interval_latency = df_all_hops[(df_all_hops['timestamp'] >= start_interval) & (df_all_hops['timestamp'] <= end_interval)]
+                
+                # Plot total average latency over the interval
+                df_total_interval_latency = df_interval_latency.groupby('timestamp')['avg'].sum().reset_index()
+                df_total_interval_latency.rename(columns={'avg': 'total_avg_latency'}, inplace=True)
+
+                plot_total_avg_latency_over_time(df_total_interval_latency)
 
             print("Passing selected high latency interval to visualize_high_latency_periods:", selected_interval_tuple)  # Debug print statement
             visualize_high_latency_periods(df_all_hops, [selected_interval_tuple])

@@ -23,7 +23,6 @@ with st.sidebar:
     # Button to trigger analysis
     analyze_button = st.button("Analyze Logs")
 
-
 # Main content area
 if file_upload or selected_folder:
     # Extract logs if zip file is uploaded
@@ -54,12 +53,24 @@ if file_upload or selected_folder:
 
     # Option to visualize high latency periods
     if st.checkbox("Visualize High Latency Periods"):
-        high_latency_intervals = st.multiselect("Select High Latency Intervals", high_latency_periods['timestamp'].tolist())
-        visualize_high_latency_periods(df_all_hops, high_latency_intervals)
+        # Ensure high_latency_periods DataFrame is not empty
+        if not high_latency_periods.empty:
+            # Convert the selected periods to tuples of start and end times
+            high_latency_intervals = [(row['timestamp'], row['timestamp']) for _, row in high_latency_periods.iterrows()]
+            interval_options = [f"{start} to {end}" for start, end in high_latency_intervals]
+            selected_interval = st.selectbox("Select High Latency Interval", interval_options)
+
+            # Parse the selected interval string back to tuple
+            start_time_str, end_time_str = selected_interval.split(" to ")
+            selected_interval_tuple = (start_time_str, end_time_str)
+
+            print("Passing selected high latency interval to visualize_high_latency_periods:", selected_interval_tuple)  # Debug print statement
+            visualize_high_latency_periods(df_all_hops, [selected_interval_tuple])
+        else:
+            st.info("No high latency periods to visualize.")
 
     # Plot total average latency over time
     plot_total_avg_latency_over_time(df_total_latency)
 
 else:
     st.info("Please upload your traceroute logs or select a folder to begin analysis.")
-

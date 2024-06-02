@@ -29,7 +29,7 @@ def suggest_high_latency_periods(df_total_latency, threshold, top_n=10):
 
 def visualize_high_latency_periods(df_all, high_latency_intervals, print_full_content=False):
     """
-    Visualize individual hop latencies for high latency periods.
+    Visualize individual hop latencies and incremental latencies for high latency periods.
 
     Parameters
     ----------
@@ -44,11 +44,8 @@ def visualize_high_latency_periods(df_all, high_latency_intervals, print_full_co
     -------
     None
     """
-    print("High latency intervals:", high_latency_intervals)  # Debug print statement
-
     for interval in high_latency_intervals:
-        print("start_time is ", interval[0], "end_time is ", interval[1])
-        start_time, end_time = interval  # This is where the error occurs
+        start_time, end_time = interval
         df_high_latency = df_all[(df_all['timestamp'] >= start_time) & (df_all['timestamp'] <= end_time)]
         
         if print_full_content:
@@ -59,16 +56,17 @@ def visualize_high_latency_periods(df_all, high_latency_intervals, print_full_co
         hop_numbers = df_high_latency['hop_number'].unique()
         avg_latencies = [df_high_latency[df_high_latency['hop_number'] == hop]['avg'].mean() for hop in hop_numbers]
         
-        for hop in hop_numbers:
-            df_hop = df_high_latency[df_high_latency['hop_number'] == hop]
-            if print_full_content:
-                print(f"Plotting data for Hop {hop}:")
-                print(df_hop[['hop_number', 'avg']])
+        # Calculate incremental latency for each hop
+        incremental_latencies = [avg_latencies[0]]  # First hop latency is taken as it is
+        for i in range(1, len(avg_latencies)):
+            incremental_latency = avg_latencies[i] - avg_latencies[i - 1]
+            incremental_latencies.append(incremental_latency)
         
-        plt.scatter(hop_numbers, avg_latencies, label=f'Interval: {start_time} to {end_time}')
+        # Plot the incremental latency
+        plt.bar(hop_numbers, incremental_latencies, label=f'Interval: {start_time} to {end_time}')
         plt.xlabel('Hop Number')
-        plt.ylabel('Average Latency (ms)')
-        plt.title(f'Individual Hop Latencies for High Latency Interval: {start_time} to {end_time}')
+        plt.ylabel('Incremental Latency (ms)')
+        plt.title(f'Incremental Latency for High Latency Interval: {start_time} to {end_time}')
         plt.legend()
         plt.grid(True)
         plt.xticks(rotation=45)

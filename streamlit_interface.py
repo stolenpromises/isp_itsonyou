@@ -67,20 +67,44 @@ if file_upload or selected_folder:
     unique_weeks = df_all_hops['week'].unique().tolist()
     unique_days = df_all_hops['day'].unique().tolist()
 
-    # Dropdowns for month, week, and day selection
-    selected_month = st.selectbox("Select Month", unique_months, format_func=lambda x: x.strftime('%Y-%m'))
-    selected_week = st.selectbox("Select Week", unique_weeks, format_func=lambda x: x.strftime('%Y-%W'))
-    selected_day = st.selectbox("Select Day", unique_days, format_func=lambda x: x.strftime('%Y-%m-%d'))
+    # Dropdowns for month, week, and day selection with option for 'None'
+    selected_month = st.selectbox("Select Month (or None)", [None] + unique_months, format_func=lambda x: 'None' if x is None else x.strftime('%Y-%m'))
+    selected_week = st.selectbox("Select Week (or None)", [None] + unique_weeks, format_func=lambda x: 'None' if x is None else x.strftime('%Y-%W'))
+    selected_day = st.selectbox("Select Day (or None)", [None] + unique_days, format_func=lambda x: 'None' if x is None else x.strftime('%Y-%m-%d'))
 
-    # Filter data based on the selected time frame
+    # Checkbox lists for multiple day/week selection within the selected scope
+    if selected_week is not None:
+        st.write("Select specific days within the week:")
+        days_in_week = unique_days if selected_week is None else [d for d in unique_days if d.start_time.strftime('%Y-%W') == selected_week.strftime('%Y-%W')]
+        selected_days_in_week = st.multiselect("Days in Week", days_in_week, format_func=lambda x: x.strftime('%Y-%m-%d'))
+
+    if selected_month is not None:
+        st.write("Select specific weeks within the month:")
+        weeks_in_month = unique_weeks if selected_month is None else [w for w in unique_weeks if w.start_time.strftime('%Y-%m') == selected_month.strftime('%Y-%m')]
+        selected_weeks_in_month = st.multiselect("Weeks in Month", weeks_in_month, format_func=lambda x: x.strftime('%Y-%W'))
+
+    if selected_month is not None:
+        st.write("Select specific days within the month:")
+        days_in_month = unique_days if selected_month is None else [d for d in unique_days if d.start_time.strftime('%Y-%m') == selected_month.strftime('%Y-%m')]
+        selected_days_in_month = st.multiselect("Days in Month", days_in_month, format_func=lambda x: x.strftime('%Y-%m-%d'))
+
+    # Filter data based on the selected time frame and additional selections
+    filtered_df = df_all_hops.copy()
+    if selected_month:
+        filtered_df = filtered_df[filtered_df['month'] == selected_month]
+    if selected_week:
+        filtered_df = filtered_df[filtered_df['week'] == selected_week]
     if selected_day:
-        filtered_df = df_all_hops[df_all_hops['day'] == selected_day]
-    elif selected_week:
-        filtered_df = df_all_hops[df_all_hops['week'] == selected_week]
-    elif selected_month:
-        filtered_df = df_all_hops[df_all_hops['month'] == selected_month]
-    else:
-        filtered_df = df_all_hops
+        filtered_df = filtered_df[filtered_df['day'] == selected_day]
+
+    if selected_week and selected_days_in_week:
+        filtered_df = filtered_df[filtered_df['day'].isin(selected_days_in_week)]
+
+    if selected_month:
+        if selected_weeks_in_month:
+            filtered_df = filtered_df[filtered_df['week'].isin(selected_weeks_in_month)]
+        if selected_days_in_month:
+            filtered_df = filtered_df[filtered_df['day'].isin(selected_days_in_month)]
 
     # Plot the filtered data
     df_total_filtered_latency = filtered_df.groupby('timestamp')['avg'].sum().reset_index()
@@ -119,7 +143,7 @@ if file_upload or selected_folder:
     st.header("High Latency Analysis")
 
     # Option to specify number of high latency periods
-    num_high_latency_periods = st.number_input("Number of High Latency Periods", min_value=1, max_value=100, value=40)
+    num_high_latency_periods = st.number_input("Number of High Latency Periods", min_value=1, max_value=100, value=5)
 
     # Option to suggest high latency periods
     if st.checkbox("Suggest High Latency Periods"):

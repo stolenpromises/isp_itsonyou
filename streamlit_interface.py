@@ -1,116 +1,65 @@
-import os
-import zipfile
-import pandas as pd
-import re
-from datetime import datetime
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 import streamlit as st
+import zipfile
+import os
+import pandas as pd
+from traceroute_analysis import suggest_high_latency_periods, visualize_high_latency_periods, plot_total_avg_latency_over_time
 
-# Function to parse a single log file
-def parse_traceroute_log(file_path):
-    with open(file_path, 'r') as file:
-        lines = file.readlines()
+# Set page title and layout
+st.set_page_config(page_title="ISP Itsonyou Traceroute Analysis", layout="wide")
 
-    # Extract timestamp from the filename
-    filename = os.path.basename(file_path)
-    timestamp_str = filename.split('_')[1].split('.')[0]
-    timestamp = datetime.strptime(timestamp_str, '%Y%m%d%H%M%S')
-    
-    # Extract hop data
-    hop_data = []
-    hop_pattern = re.compile(r"^\s*(\d+)\.\|\--\s*([^ ]+)\s+([\d\.]+)%\s+(\d+)\s+([\d\.]+)\s+([\d\.]+)\s+([\d\.]+)\s+([\d\.]+)\s+([\d\.]+)")
-    
-    for line in lines:
-        match = hop_pattern.match(line)
-        if match:
-            hop = {
-                'timestamp': timestamp,
-                'hop_number': int(match.group(1)),
-                'host': match.group(2),
-                'loss_percentage': float(match.group(3)),
-                'sent': int(match.group(4)),
-                'last': float(match.group(5)),
-                'avg': float(match.group(6)),
-                'best': float(match.group(7)),
-                'worst': float(match.group(8)),
-                'stdev': float(match.group(9))
-            }
-            hop_data.append(hop)
-    
-    return hop_data
+# Sidebar for user input
+with st.sidebar:
+    st.title("Traceroute Analysis Options")
 
-# Streamlit UI setup
-st.title('Traceroute Analysis')
+    # File upload for zip file or folder selection
+    file_upload = st.file_uploader("Upload Traceroute Logs (zip or folder)", type=["zip", "folder"])
 
-# File upload
-uploaded_files = st.file_uploader("Upload Traceroute Log Files", accept_multiple_files=True)
+    # Get list of available folders
+    folder_options = [f for f in os.listdir() if os.path.isdir(f)]
 
-if uploaded_files:
-    all_data = []
-    for uploaded_file in uploaded_files:
-        with open(f"/tmp/{uploaded_file.name}", "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        all_data.extend(parse_traceroute_log(f"/tmp/{uploaded_file.name}"))
+    # Select folder if available
+    selected_folder = st.selectbox("Select Folder", folder_options, index=0) if folder_options else None
 
-    df_all = pd.DataFrame(all_data)
+    # Button to trigger analysis
+    analyze_button = st.button("Analyze Logs")
 
-    # User input for date range
-    start_date = st.date_input("Start Date", df_all['timestamp'].min().date())
-    end_date = st.date_input("End Date", df_all['timestamp'].max().date())
 
-    # Filter data based on user input
-    df_filtered = df_all[(df_all['timestamp'] >= pd.Timestamp(start_date)) & (df_all['timestamp'] <= pd.Timestamp(end_date))]
-
-    # Calculate total average latency per timestamp
-    df_total_latency = df_filtered.groupby('timestamp')['avg'].sum().reset_index()
-    df_total_latency.columns = ['timestamp', 'total_avg_latency']
-
-    # Determine the appropriate x-axis locator based on the time range
-    time_range = df_total_latency['timestamp'].max() - df_total_latency['timestamp'].min()
-
-    if time_range < pd.Timedelta('1 days'):
-        locator = mdates.HourLocator(interval=1)
-        formatter = mdates.DateFormatter('%I %p')
-    elif time_range < pd.Timedelta('7 days'):
-        locator = mdates.DayLocator(interval=1)
-        formatter = mdates.DateFormatter('%b %d')
+# Main content area
+if file_upload or selected_folder:
+    # Extract logs if zip file is uploaded
+    if file_upload and file_upload.name.endswith(".zip"):
+        with zipfile.ZipFile(file_upload, 'r') as zip_ref:
+            zip_ref.extractall('parsed_logs/temp')
+        # Read logs from folder
+        df_all_hops = pd.read_csv(os.path.join('parsed_logs/temp', 'parsed_logs.csv'))
+        os.remove(os.path.join('parsed_logs/temp', 'parsed_logs.csv'))
     else:
-        locator = mdates.WeekdayLocator(interval=1)
-        formatter = mdates.DateFormatter('%b %d')
+        # Read logs from folder if folder is selected
+        df_all_hops = pd.read_csv(os.path.join(selected_folder, 'parsed_logs.csv'))
 
-    # Plot with dynamic x-axis scaling
-    fig, ax = plt.subplots(figsize=(12, 6))
-    ax.plot(df_total_latency['timestamp'], df_total_latency['total_avg_latency'], label='Total Avg Latency')
-    ax.axhline(y=df_total_latency['total_avg_latency'].mean(), color='r', linestyle='--', label='Average Latency')
-    ax.set_xlabel('Timestamp')
-    ax.set_ylabel('Total Average Latency (ms)')
-    ax.set_title('Total Average Latency Over Time')
-    ax.legend()
-    ax.grid(True)
+    # Calculate total average latency
+    df_total_latency = df_all_hops.groupby('timestamp')['avg'].sum().reset_index()
+    df_total_latency.rename(columns={'avg': 'total_avg_latency'}, inplace=True)
 
-    # Set dynamic x-axis locator and formatter
-    ax.xaxis.set_major_locator(locator)
-    ax.xaxis.set_major_formatter(formatter)
+    # Define latency threshold
+    latency_threshold = df_total_latency['total_avg_latency'].mean() + 2 * df_total_latency['total_avg_latency'].std()
 
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    st.pyplot(fig)
+    # Display options for high latency analysis
+    st.header("High Latency Analysis")
 
-    # Visualize individual hop latencies for high latency periods
-    high_latency_periods = df_total_latency[df_total_latency['total_avg_latency'] > df_total_latency['total_avg_latency'].mean()]
+    # Option to suggest high latency periods
+    if st.checkbox("Suggest High Latency Periods"):
+        high_latency_periods = suggest_high_latency_periods(df_total_latency, latency_threshold)
+        st.write(high_latency_periods)
 
-    for timestamp in high_latency_periods['timestamp']:
-        df_high_latency = df_filtered[df_filtered['timestamp'] == timestamp]
-        fig, ax = plt.subplots(figsize=(12, 6))
-        for hop in df_high_latency['hop_number'].unique():
-            df_hop = df_high_latency[df_high_latency['hop_number'] == hop]
-            ax.plot(df_hop['hop_number'], df_hop['avg'], label=f'Hop {hop}')
-        ax.set_xlabel('Hop Number')
-        ax.set_ylabel('Average Latency (ms)')
-        ax.set_title(f'Individual Hop Latencies for High Latency Period: {timestamp}')
-        ax.legend()
-        ax.grid(True)
-        plt.xticks(rotation=45)
-        plt.tight_layout()
-        st.pyplot(fig)
+    # Option to visualize high latency periods
+    if st.checkbox("Visualize High Latency Periods"):
+        high_latency_intervals = st.multiselect("Select High Latency Intervals", high_latency_periods['timestamp'].tolist())
+        visualize_high_latency_periods(df_all_hops, high_latency_intervals)
+
+    # Plot total average latency over time
+    plot_total_avg_latency_over_time(df_total_latency)
+
+else:
+    st.info("Please upload your traceroute logs or select a folder to begin analysis.")
+

@@ -1,12 +1,9 @@
-
 # ISP Itsonyou Project
 
 ## Overview
-
 This project analyzes network performance issues using traceroute logs. The primary goals are to identify periods of high latency, determine the source of slowdowns, and visualize the data.
 
 ## Folder Structure
-
 ```
 isp_itsonyou/
 │
@@ -22,30 +19,35 @@ isp_itsonyou/
 
 ## Goals and Objectives
 
-1. **Identify Periods of High Latency**:
-   - Analyze the logs to identify periods when the total latency exceeds normal levels.
-   - Specifically, we are interested in identifying times when the total latency exceeds 2000ms, which indicates a significant slowdown.
+### Identify Periods of High Latency:
 
-2. **Identify the Source of Slowdown**:
-   - Determine which network hops are contributing most to the latency during these periods.
-   - We expect that the slowdown is often caused by one or more of the first 1-5 hops, which are typically within the ISP's network infrastructure.
+- Analyze the logs to identify periods when the total latency exceeds normal levels.
+- Specifically, we are interested in identifying times when the total latency exceeds 2000ms, which indicates a significant slowdown.
 
-3. **Visualize the Data**:
-   - Create plots to visually represent the average total latency over time.
-   - Generate individual hop latency plots to pinpoint where the slowdowns occur within the network path.
+### Identify the Source of Slowdown:
 
-**Background:**
+- Determine which network hops are contributing most to the latency during these periods.
+- We expect that the slowdown is often caused by one or more of the first 1-5 hops, which are typically within the ISP's network infrastructure.
+
+### Visualize the Data:
+
+- Create plots to visually represent the average total latency over time.
+- Generate individual hop latency plots to pinpoint where the slowdowns occur within the network path.
+
+## Background:
 
 - The network connection in question is a 300/10 Mbps connection.
 - Intermittent issues have been observed, characterized by periods of very high latency (up to 2000ms) and reduced throughput (below 30 Mbps).
 
-**Logs Description:**
+## Logs Description:
 
 The logs are traceroute outputs saved in text files with timestamps in their filenames. Each log file follows this format:
 
 ```
 /home/nathanm/traceroute_logs/mtr_20240521195616.txt
+```
 
+```
 Start: 2024-05-21T19:56:16-0500
 HOST: nathandebiansecure                      Loss%   Snt   Last   Avg  Best  Wrst StDev
   1.|-- SAX2V1R.lan                              0.0%    60    0.4   0.7   0.3   1.4   0.2
@@ -59,58 +61,63 @@ HOST: nathandebiansecure                      Loss%   Snt   Last   Avg  Best  Wr
   9.|-- 142.251.60.47                            0.0%    60   11.5  12.3  10.2  14.7   1.3
  10.|-- dns.google                               0.0%    60   10.2  13.2  10.1  52.6   5.3
 ```
-## Dependencies
 
+## Dependencies
 - Python 3.x
 - Pandas
 - Matplotlib
 - Streamlit
 
-## NumPy-Style Docstrings
-
-The `traceroute_analysis.py` and `log_import.py` scripts have been updated to include NumPy-style docstrings for better documentation and clarity.
+### streamlist_interface.py ###
+Functions:
+- main - Main function to run the Streamlit interface
 
 ### traceroute_analysis.py
-- **Functions:**
-  - `suggest_high_latency_periods`
-  - `visualize_high_latency_periods`
-  - `plot_total_avg_latency_over_time`
-  - `main`
+Functions:
+- suggest_high_latency_periods - Suggest periods of high latency based on total latency
+- visualize_high_latency_periods - Visualize periods of high latency
+- plot_total_avg_latency_over_time - Plot the average total latency over time
+- main - Main function to run the analysis
 
 ### log_import.py
-- **Functions:**
-  - `parse_traceroute_log`
-  - `extract_logs`
+Functions:
+- parse_traceroute_log
+- extract_logs
 
 ## Metrics to Implement:
 
-1. **Hop Latency Histograms**:
-   - Visualize the distribution of latencies for individual hops.
+### Hop Latency Histograms:
 
-2. **Packet Loss Analysis**:
-   - Analyze and visualize packet loss percentages for each hop.
+- Visualize the distribution of latencies for individual hops.
 
-3. **Latency Percentiles**:
-   - Calculate and visualize latency percentiles (e.g., 95th, 99th).
+### Packet Loss Analysis:
+
+- Analyze and visualize packet loss percentages for each hop.
+
+### Latency Percentiles:
+
+- Calculate and visualize latency percentiles (e.g., 95th, 99th).
 
 ## LLM Opening Prompt
-
 (To be used in event a new conversation needs to be started, i.e., all context is lost)
 
 Assist with software development. This project analyzes network performance issues using traceroute logs. The primary goals are to identify periods of high latency, determine the source of slowdowns, and visualize the data. You should write code to execute in your environment with my logs as test inputs. Later I will execute locally on my Debian KDE system. As it sits now, I am executing via Windows 11 and VS Code. We don't want to do too many steps in a single turn. Let's keep it simple.
 
-Begin by extracting the contents of the zip file and reading in the entirety of README.md file to understand the project.
-Development is now being conducted alongside your environment in VS Studio Code on a Windows 11 system.
+1. Begin by extracting the contents of the zip file and reading in the entirety of README.md file to understand the project. Development is now being conducted alongside your environment in VS Studio Code on a Windows 11 system.
 
-Do not suggest executing code locally, due to errors in your environment.
-Rather, troubleshoot why the errors in your environment are happening via breaking the process into smaller steps, using print statements, etc.
-We will probably go for a complete reset of the coding environment and/or a new conversation before resorting to local execution on my end.
+2. Do not suggest executing code locally, due to errors in your environment. Rather, troubleshoot why the errors in your environment are happening via breaking the process into smaller steps, using print statements, etc. We will probably go for a complete reset of the coding environment and/or a new conversation before resorting to local execution on my end.
 
-With this opening prompt a zip of the current project status has been attached.
+3. With this opening prompt a zip of the current project status has been attached.
 
-1. Extract the project without adding anything to the name, i.e., no _unzipped or anything. Just use the folder isp_itsonyou (via extraction) as the root folder for the project.
-2. Get the README.md file and read it to understand the project.
-   - When reading in files, such as README.md, it is not necessary to redisplay them for me in a human readable format. Single line read ins which work for you are all that is needed, in most cases. I don't want to use up too much context window re-displaying text which has already been read in.
-   - When listing the content of log folders after extraction, only list the first 5 or so files. This is to save context window space.
-3. Sample logs can be found under isp_itsonyou\
-4. Run a test on a portion of the logs to see if the code is working as expected up to it's last documented functional state.
+4. Extract the project without adding anything to the name, i.e., no _unzipped or anything. Just use the folder isp_itsonyou (via extraction) as the root folder for the project.
+
+5. Get the README.md file and read it to understand the project.
+
+6. When reading in files, such as README.md, it is not necessary to redisplay them for me in a human readable format. Single line read ins which work for you are all that is needed, in most cases. I don't want to use up too much context window re-displaying text which has already been read in.
+
+7. When listing the content of log folders after extraction, only list the first 5 or so files. This is to save context window space.
+
+8. Sample logs can be found under isp_itsonyou\first_72hr_logs.zip
+
+9. Run a test on a portion of the logs to see if the code is working as expected up to its last documented functional state.
+```

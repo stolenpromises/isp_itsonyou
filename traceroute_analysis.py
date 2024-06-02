@@ -1,6 +1,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import streamlit as st
+
 
 def suggest_high_latency_periods(df_total_latency, threshold, top_n=10):
     """
@@ -68,7 +70,10 @@ def visualize_high_latency_periods(df_all, high_latency_intervals, print_full_co
         plt.grid(True)
         plt.xticks(rotation=45)
         plt.tight_layout()
-        plt.show()
+        # plt.show(backend='TkAgg')  # or 'Qt5Agg'
+        # plt.show(backend='Qt5Agg')  # or 'Qt5Agg'
+        st.pyplot(plt)
+
 
 def plot_total_avg_latency_over_time(df_total_latency):
     """
@@ -104,7 +109,9 @@ def plot_total_avg_latency_over_time(df_total_latency):
 
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.show()
+    # plt.show(backend='TkAgg')  # or 'Qt5Agg'
+    # plt.show(backend='Qt5Agg')  # or 'Qt5Agg'
+    st.pyplot(plt)
 
 def main(high_latency_intervals=None, print_full_content=False):
     """
@@ -143,8 +150,7 @@ def main(high_latency_intervals=None, print_full_content=False):
 
 # Example usage
 # First run (no parameter, suggest high latency intervals)
-main()
-# plot_total_avg_latency_over_time(df)
+# main()
 # Second run (with specified high latency intervals)
 # Example interval format: [('2024-05-21 23:10', '2024-05-21 23:15')]
-# main(high_latency_intervals=[('2024-05-21 20:16:14', '2024-05-21 20:26:17'), ('2024-05-22 01:57:55', '2024-05-22 02:00:00')], print_full_content=False)
+main(high_latency_intervals=[('2024-05-21 20:16:14', '2024-05-21 20:26:17'), ('2024-05-22 01:57:55', '2024-05-22 02:00:00')], print_full_content=False)

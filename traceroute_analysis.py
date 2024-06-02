@@ -128,9 +128,12 @@ def main(high_latency_intervals=None, print_full_content=False):
     -------
     None
     """
-    # Load the DataFrame
-    df_all_hops = pd.read_csv('parsed_logs/parsed_logs.csv')
-    #df_all_hops = df
+    try:
+        # Load the DataFrame
+        df_all_hops = pd.read_csv('parsed_logs/parsed_logs.csv')
+    except FileNotFoundError:
+        print("Error: parsed_logs/parsed_logs.csv not found. Ensure the file exists and try again.")
+        return
     
     # Calculate total average latency
     df_total_latency = df_all_hops.groupby('timestamp')['avg'].sum().reset_index()
@@ -147,6 +150,7 @@ def main(high_latency_intervals=None, print_full_content=False):
         # Visualize high latency periods for specified intervals
         visualize_high_latency_periods(df_all_hops, high_latency_intervals, print_full_content)
         plot_total_avg_latency_over_time(df_total_latency)
+
 
 # Example usage
 # First run (no parameter, suggest high latency intervals)

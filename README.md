@@ -81,7 +81,7 @@ Functions:
 
 ### log_import.py
 Functions:
-- parse_traceroute_log
+- parse_traceroute_log 
 - extract_logs
 
 ## Metrics to Implement:

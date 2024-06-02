@@ -99,7 +99,7 @@ The `traceroute_analysis.py` and `log_import.py` scripts have been updated to in
 
 Assist with software development. This project analyzes network performance issues using traceroute logs. The primary goals are to identify periods of high latency, determine the source of slowdowns, and visualize the data. You should write code to execute in your environment with my logs as test inputs. Later I will execute locally on my Debian KDE system. As it sits now, I am executing via Windows 11 and VS Code. We don't want to do too many steps in a single turn. Let's keep it simple.
 
-Begin by extracting the contents of the zip file and reading in the README.md file to understand the project.
+Begin by extracting the contents of the zip file and reading in the entirety of README.md file to understand the project.
 Development is now being conducted alongside your environment in VS Studio Code on a Windows 11 system.
 
 Do not suggest executing code locally, due to errors in your environment.
@@ -112,5 +112,5 @@ With this opening prompt a zip of the current project status has been attached.
 2. Get the README.md file and read it to understand the project.
    - When reading in files, such as README.md, it is not necessary to redisplay them for me in a human readable format. Single line read ins which work for you are all that is needed, in most cases. I don't want to use up too much context window re-displaying text which has already been read in.
    - When listing the content of log folders after extraction, only list the first 5 or so files. This is to save context window space.
-3. Sample logs can be found under isp_itsonyou\traceroute_logs first_12_hours_logs.zip
+3. Sample logs can be found under isp_itsonyou\
 4. Run a test on a portion of the logs to see if the code is working as expected up to it's last documented functional state.

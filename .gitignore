@@ -82,3 +82,5 @@ dmypy.json
 
 # Exclude the temp folder
 temp/
+parsed_logs/
+traceroute_logs/

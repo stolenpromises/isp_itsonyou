@@ -122,8 +122,9 @@ def main(high_latency_intervals=None, print_full_content=False):
     None
     """
     # Load the DataFrame
-    df_all_hops = pd.read_csv('/mnt/data/parsed_logs.csv')
-
+    df_all_hops = pd.read_csv('parsed_logs/parsed_logs.csv')
+    #df_all_hops = df
+    
     # Calculate total average latency
     df_total_latency = df_all_hops.groupby('timestamp')['avg'].sum().reset_index()
     df_total_latency.rename(columns={'avg': 'total_avg_latency'}, inplace=True)
@@ -142,8 +143,8 @@ def main(high_latency_intervals=None, print_full_content=False):
 
 # Example usage
 # First run (no parameter, suggest high latency intervals)
-# main()
-
+main()
+# plot_total_avg_latency_over_time(df)
 # Second run (with specified high latency intervals)
 # Example interval format: [('2024-05-21 23:10', '2024-05-21 23:15')]
 # main(high_latency_intervals=[('2024-05-21 20:16:14', '2024-05-21 20:26:17'), ('2024-05-22 01:57:55', '2024-05-22 02:00:00')], print_full_content=False)

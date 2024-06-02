@@ -35,7 +35,7 @@ def parse_traceroute_log(file_path):
             hop = {
                 'timestamp': timestamp,
                 'hop_number': int(match.group(1)),
-                'host': match.group(2)),
+                'host': match.group(2),
                 'loss_percentage': float(match.group(3)),
                 'sent': int(match.group(4)),
                 'last': float(match.group(5)),
@@ -79,7 +79,7 @@ def extract_logs(zip_file_path=None, logs_directory=None):
     return df_all_hops
 
 # Example usage
-# df = extract_logs(zip_file_path='/path/to/first_12_hours_logs.zip')
+#df = extract_logs(zip_file_path='traceroute_logs/first_72hr_logs.zip', )
 # or
-# df = extract_logs(logs_directory='/path/to/logs_directory')
-# df.to_csv('parsed_logs.csv', index=False)
+df = extract_logs(logs_directory='traceroute_logs/first_72hr_logs/')
+df.to_csv('parsed_logs/parsed_logs.csv', index=False)

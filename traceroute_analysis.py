@@ -44,8 +44,11 @@ def visualize_high_latency_periods(df_all, high_latency_intervals, print_full_co
     -------
     None
     """
+    print("High latency intervals:", high_latency_intervals)  # Debug print statement
+
     for interval in high_latency_intervals:
-        start_time, end_time = interval
+        print("start_time is ", interval[0], "end_time is ", interval[1])
+        start_time, end_time = interval  # This is where the error occurs
         df_high_latency = df_all[(df_all['timestamp'] >= start_time) & (df_all['timestamp'] <= end_time)]
         
         if print_full_content:
@@ -70,10 +73,7 @@ def visualize_high_latency_periods(df_all, high_latency_intervals, print_full_co
         plt.grid(True)
         plt.xticks(rotation=45)
         plt.tight_layout()
-        # plt.show(backend='TkAgg')  # or 'Qt5Agg'
-        # plt.show(backend='Qt5Agg')  # or 'Qt5Agg'
         st.pyplot(plt)
-
 
 def plot_total_avg_latency_over_time(df_total_latency):
     """

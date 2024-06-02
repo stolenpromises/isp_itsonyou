@@ -2,6 +2,7 @@ import streamlit as st
 import zipfile
 import os
 import pandas as pd
+import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from traceroute_analysis import suggest_high_latency_periods, visualize_high_latency_periods, plot_total_avg_latency_over_time
 from log_import import extract_logs  # Import the extract_logs function
@@ -88,6 +89,28 @@ if file_upload or selected_folder:
     st.header("Filtered Latency Over Time")
     plot_total_avg_latency_over_time(df_total_filtered_latency)
 
+    # User input for specifying hop number
+    hop_number = st.number_input("Specify Hop Number", min_value=1, step=1)
+
+    # Calculate and plot incremental latency for the specified hop
+    if st.button("Plot Incremental Latency for Specified Hop"):
+        if hop_number:
+            df_hop_latency = filtered_df[filtered_df['hop_number'] == hop_number]
+            df_hop_latency = df_hop_latency.groupby('timestamp')['avg'].mean().reset_index()
+            df_hop_latency.rename(columns={'avg': 'incremental_latency'}, inplace=True)
+
+            st.header(f"Incremental Latency for Hop {hop_number} Over Time")
+            plt.figure(figsize=(12, 6))
+            plt.plot(df_hop_latency['timestamp'], df_hop_latency['incremental_latency'], label=f'Incremental Latency for Hop {hop_number}')
+            plt.xlabel('Timestamp')
+            plt.ylabel('Incremental Latency (ms)')
+            plt.title(f'Incremental Latency for Hop {hop_number} Over Time')
+            plt.legend()
+            plt.grid(True)
+            plt.xticks(rotation=45)
+            plt.tight_layout()
+            st.pyplot(plt)
+
     # Calculate total average latency for the entire dataset
     df_total_latency = df_all_hops.groupby('timestamp')['avg'].sum().reset_index()
     df_total_latency.rename(columns={'avg': 'total_avg_latency'}, inplace=True)
@@ -138,13 +161,4 @@ if file_upload or selected_folder:
                 plot_total_avg_latency_over_time(df_total_interval_latency)
 
             print("Passing selected high latency interval to visualize_high_latency_periods:", selected_interval_tuple)  # Debug print statement
-            visualize_high_latency_periods(df_all_hops, [selected_interval_tuple])
-        else:
-            st.info("No high latency periods to visualize.")
-
-    # Plot total average latency over time for the entire dataset
-    st.header("Total Latency Over Entire Period")
-    plot_total_avg_latency_over_time(df_total_latency)
-
-else:
-    st.info("Please upload your traceroute logs or select a folder to begin analysis.")
+           

@@ -4,6 +4,7 @@ import os
 import pandas as pd
 from datetime import datetime, timedelta
 from traceroute_analysis import suggest_high_latency_periods, visualize_high_latency_periods, plot_total_avg_latency_over_time
+from log_import import extract_logs  # Import the extract_logs function
 
 # Set page title and layout
 st.set_page_config(page_title="ISP Itsonyou Traceroute Analysis", layout="wide")
@@ -26,25 +27,40 @@ with st.sidebar:
 
 # Main content area
 if file_upload or selected_folder:
+    # Define the extraction path
+    extraction_path = 'parsed_logs/temp'
+    
     # Extract logs if zip file is uploaded
     if file_upload and file_upload.name.endswith(".zip"):
         with zipfile.ZipFile(file_upload, 'r') as zip_ref:
-            zip_ref.extractall('parsed_logs/temp')
-        # Read logs from folder
-        df_all_hops = pd.read_csv(os.path.join('parsed_logs/temp', 'parsed_logs.csv'))
-        os.remove(os.path.join('parsed_logs/temp', 'parsed_logs.csv'))
+            zip_ref.extractall(extraction_path)
+        
+        # Extract and parse logs
+        df_all_hops = extract_logs(logs_directory=extraction_path)
+        
+        if df_all_hops.empty:
+            st.error("No log files found in the uploaded zip file.")
+            st.stop()
+        
+        # Save the parsed data to a CSV file
+        csv_file_path = os.path.join(extraction_path, 'parsed_logs.csv')
+        df_all_hops.to_csv(csv_file_path, index=False)
     else:
         # Read logs from folder if folder is selected
-        df_all_hops = pd.read_csv(os.path.join(selected_folder, 'parsed_logs.csv'))
+        csv_file_path = os.path.join(selected_folder, 'parsed_logs.csv')
+        if os.path.exists(csv_file_path):
+            df_all_hops = pd.read_csv(csv_file_path)
+        else:
+            st.error(f"No CSV file found in the selected folder: {csv_file_path}")
+            st.stop()
 
     # Calculate total average latency
     df_total_latency = df_all_hops.groupby('timestamp')['avg'].sum().reset_index()
     df_total_latency.rename(columns={'avg': 'total_avg_latency'}, inplace=True)
 
-    # Define latency threshold
-    min_latency = st.number_input("Minimum Latency (ms)", min_value=0, value=2000)
-    max_latency = st.number_input("Maximum Latency (ms)", min_value=0, value=10000)
-    latency_threshold = df_total_latency['total_avg_latency'].mean() + 2 * df_total_latency['total_avg_latency'].std()
+    # Define latency thresholds
+    min_latency = st.number_input("Minimum Latency (ms)", min_value=0, value=150)
+    max_latency = st.number_input("Maximum Latency (ms)", min_value=0, value=2500)
 
     # Display options for high latency analysis
     st.header("High Latency Analysis")
@@ -54,10 +70,7 @@ if file_upload or selected_folder:
 
     # Option to suggest high latency periods
     if st.checkbox("Suggest High Latency Periods"):
-        high_latency_periods = suggest_high_latency_periods(df_total_latency, latency_threshold, top_n=num_high_latency_periods)
-        # Apply min and max latency filters
-        high_latency_periods = high_latency_periods[(high_latency_periods['total_avg_latency'] >= min_latency) & 
-                                                    (high_latency_periods['total_avg_latency'] <= max_latency)]
+        high_latency_periods = suggest_high_latency_periods(df_total_latency, min_latency, max_latency, top_n=num_high_latency_periods)
         st.write(high_latency_periods)
 
     # Option to visualize high latency periods

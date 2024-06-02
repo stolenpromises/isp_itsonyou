@@ -4,28 +4,31 @@ import matplotlib.dates as mdates
 import streamlit as st
 
 
-def suggest_high_latency_periods(df_total_latency, threshold, top_n=10):
+def suggest_high_latency_periods(df_total_latency, min_threshold, max_threshold, top_n=40):
     """
-    Suggest high latency periods based on the defined threshold.
+    Suggest high latency periods based on the defined thresholds.
 
     Parameters
     ----------
     df_total_latency : pd.DataFrame
         DataFrame containing total average latency data.
-    threshold : float
-        Latency threshold to identify high latency periods.
+    min_threshold : float
+        Minimum latency threshold to identify high latency periods.
+    max_threshold : float
+        Maximum latency threshold to identify high latency periods.
     top_n : int, optional
-        Number of top high latency periods to suggest (default is 10).
+        Number of top high latency periods to suggest (default is 40).
 
     Returns
     -------
     pd.DataFrame
         DataFrame containing the suggested high latency periods.
     """
-    high_latency_periods = df_total_latency[df_total_latency['total_avg_latency'] > threshold]
-    print("Suggested high latency periods:")
-    print(high_latency_periods.head(top_n))
+    high_latency_periods = df_total_latency[(df_total_latency['total_avg_latency'] >= min_threshold) & 
+                                            (df_total_latency['total_avg_latency'] <= max_threshold)]
+    high_latency_periods = high_latency_periods.sort_values(by='total_avg_latency', ascending=False)
     return high_latency_periods.head(top_n)
+
 
 def visualize_high_latency_periods(df_all, high_latency_intervals, print_full_content=False):
     """

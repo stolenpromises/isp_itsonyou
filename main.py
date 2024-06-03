@@ -75,18 +75,21 @@ if csv_file:
             hop_numbers = df_all_hops['hop_number'].unique().tolist()
             selected_hops = st.multiselect("Specify Hop Number", hop_numbers, default=hop_numbers[:1])
 
-            if st.button("Plot", key='main_plot'):
-                filtered_df = df_all_hops.copy()
-                if selected_month != "All":
-                    filtered_df = filtered_df[filtered_df['timestamp'].dt.to_period('M') == selected_month]
-                if selected_week != "All":
-                    filtered_df = filtered_df[filtered_df['timestamp'].dt.to_period('W') == selected_week]
-                if selected_days:
-                    filtered_df = filtered_df[filtered_df['timestamp'].dt.to_period('D').isin(selected_days)]
+        # Plot Button
+        if st.button("Plot", key='main_plot'):
+            # Filter DataFrame
+            filtered_df = df_all_hops.copy()
+            if selected_month != "All":
+                filtered_df = filtered_df[filtered_df['timestamp'].dt.to_period('M') == selected_month]
+            if selected_week != "All":
+                filtered_df = filtered_df[filtered_df['timestamp'].dt.to_period('W') == selected_week]
+            if selected_days:
+                filtered_df = filtered_df[filtered_df['timestamp'].dt.to_period('D').isin(selected_days)]
 
-                # Plot Average Total Latency Over Scope
-                df_total_filtered_latency = filtered_df.groupby('timestamp')['avg'].sum().reset_index()
-                df_total_filtered_latency.rename(columns={'avg': 'total_avg_latency'}, inplace=True)
+            # Plot Average Total Latency Over Scope
+            df_total_filtered_latency = filtered_df.groupby('timestamp')['avg'].sum().reset_index()
+            df_total_filtered_latency.rename(columns={'avg': 'total_avg_latency'}, inplace=True)
+            with col1:
                 st.header("Filtered Latency Over Time")
                 fig, ax = plt.subplots()
                 ax.plot(df_total_filtered_latency['timestamp'], df_total_filtered_latency['total_avg_latency'], label='Total Avg Latency')
@@ -99,44 +102,47 @@ if csv_file:
                 plt.xticks(rotation=45)
                 st.pyplot(fig)
 
-                # High Latency Analysis
-                if suggest_high_latency:
+            # High Latency Analysis
+            if suggest_high_latency:
+                with col2:
                     high_latency_periods = suggest_high_latency_periods(df_total_filtered_latency, min_latency, max_latency, top_n=num_high_latency_periods)
                     st.write(high_latency_periods)
-                if visualize_high_latency and 'high_latency_periods' in locals() and not high_latency_periods.empty:
-                    high_latency_intervals = [(row['timestamp'], row['timestamp']) for _, row in high_latency_periods.iterrows()]
-                    interval_options = [f"{start} to {end}" for start, end in high_latency_intervals]
-                    selected_interval = st.selectbox("Select High Latency Interval", interval_options, key='select_interval')
+                    if visualize_high_latency and not high_latency_periods.empty:
+                        st.subheader("High Latency Analysis Options")
+                        interval_options = [f"{row['timestamp']} to {row['timestamp']}" for _, row in high_latency_periods.iterrows()]
+                        selected_interval = st.selectbox("Select High Latency Interval", interval_options, key='select_interval')
+                        interval_minutes = st.number_input("Select +/- Interval (minutes)", min_value=1, max_value=120, value=10, key='interval_minutes')
 
-                    start_time_str, end_time_str = selected_interval.split(" to ")
-                    selected_interval_tuple = (start_time_str, end_time_str)
+                        start_time_str, end_time_str = selected_interval.split(" to ")
+                        selected_interval_tuple = (start_time_str, end_time_str)
 
-                    df_high_latency = filtered_df[(filtered_df['timestamp'] >= start_time_str) & (filtered_df['timestamp'] <= end_time_str)]
-                    st.write(df_high_latency)
+                        df_high_latency = filtered_df[(filtered_df['timestamp'] >= start_time_str) & (filtered_df['timestamp'] <= end_time_str)]
+                        st.write(df_high_latency)
 
-                    interval_minutes = st.number_input("Select +/- Interval (minutes)", min_value=1, max_value=120, value=10, key='interval_minutes')
-                    start_interval = (pd.to_datetime(start_time_str) - pd.Timedelta(minutes=interval_minutes)).strftime('%Y-%m-%d %H:%M:%S')
-                    end_interval = (pd.to_datetime(end_time_str) + pd.Timedelta(minutes=interval_minutes)).strftime('%Y-%m-%d %H:%M:%S')
-                    df_interval_latency = filtered_df[(filtered_df['timestamp'] >= start_interval) & (filtered_df['timestamp'] <= end_interval)]
+                        start_interval = (pd.to_datetime(start_time_str) - pd.Timedelta(minutes=interval_minutes)).strftime('%Y-%m-%d %H:%M:%S')
+                        end_interval = (pd.to_datetime(end_time_str) + pd.Timedelta(minutes=interval_minutes)).strftime('%Y-%m-%d %H:%M:%S')
+                        df_interval_latency = filtered_df[(filtered_df['timestamp'] >= start_interval) & (filtered_df['timestamp'] <= end_interval)]
 
-                    df_total_interval_latency = df_interval_latency.groupby('timestamp')['avg'].sum().reset_index()
-                    df_total_interval_latency.rename(columns={'avg': 'total_avg_latency'}, inplace=True)
+                        df_total_interval_latency = df_interval_latency.groupby('timestamp')['avg'].sum().reset_index()
+                        df_total_interval_latency.rename(columns={'avg': 'total_avg_latency'}, inplace=True)
 
-                    fig, ax = plt.subplots(figsize=(12, 6))
-                    ax.plot(df_total_interval_latency['timestamp'], df_total_interval_latency['total_avg_latency'], label='Total Avg Latency')
-                    ax.axhline(y=df_total_interval_latency['total_avg_latency'].mean(), color='r', linestyle='--', label='Average Latency')
-                    ax.set_xlabel('Timestamp')
-                    ax.set_ylabel('Total Average Latency (ms)')
-                    ax.set_title('Total Average Latency Over Time')
-                    ax.legend()
-                    ax.grid(True)
-                    plt.xticks(rotation=45)
-                    st.pyplot(fig)
+                        with col1:
+                            fig, ax = plt.subplots(figsize=(12, 6))
+                            ax.plot(df_total_interval_latency['timestamp'], df_total_interval_latency['total_avg_latency'], label='Total Avg Latency')
+                            ax.axhline(y=df_total_interval_latency['total_avg_latency'].mean(), color='r', linestyle='--', label='Average Latency')
+                            ax.set_xlabel('Timestamp')
+                            ax.set_ylabel('Total Average Latency (ms)')
+                            ax.set_title('Total Average Latency Over Time')
+                            ax.legend()
+                            ax.grid(True)
+                            plt.xticks(rotation=45)
+                            st.pyplot(fig)
 
-                    visualize_high_latency_periods(filtered_df, [selected_interval_tuple])
+                        visualize_high_latency_periods(filtered_df, [selected_interval_tuple])
 
-                # Plot Hop Incremental Latency
-                if plot_hop:
+            # Plot Hop Incremental Latency
+            if plot_hop:
+                with col1:
                     for hop_number in selected_hops:
                         df_hop_latency = filtered_df[filtered_df['hop_number'] == hop_number]
                         df_hop_latency = df_hop_latency.groupby('timestamp')['avg'].mean().reset_index()
@@ -155,4 +161,4 @@ if csv_file:
 else:
     st.info("Please upload your traceroute logs or select a folder to begin analysis.")
 
-# END CONTEXT: FILE 6/6 - main.py
+# END CONTEXT: FILE 6/6

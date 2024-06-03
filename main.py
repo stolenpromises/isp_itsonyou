@@ -1,5 +1,4 @@
-# BEGIN CONTEXT: FILE 3/3
-# File: main.py
+# BEGIN CONTEXT: FILE 3/6 - main.py
 
 import os
 import pandas as pd
@@ -89,11 +88,11 @@ if csv_file:
             plt.xticks(rotation=45)
             st.pyplot(fig)
 
+    st.header("High Latency Analysis")
     min_latency = st.number_input("Minimum Latency (ms)", min_value=0, value=150)
     max_latency = st.number_input("Maximum Latency (ms)", min_value=0, value=2500)
-
-    st.header("High Latency Analysis")
     num_high_latency_periods = st.number_input("Number of High Latency Periods", min_value=1, max_value=100, value=5)
+
     if st.checkbox("Suggest High Latency Periods"):
         if 'df_total_filtered_latency' in locals():
             high_latency_periods = suggest_high_latency_periods(df_total_filtered_latency, min_latency, max_latency, top_n=num_high_latency_periods)
@@ -138,4 +137,4 @@ if csv_file:
 else:
     st.info("Please upload your traceroute logs or select a folder to begin analysis.")
 
-# END CONTEXT: FILE 3/3
+# END CONTEXT: FILE 6/6 - main.py

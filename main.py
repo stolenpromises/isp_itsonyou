@@ -1,5 +1,3 @@
-# BEGIN CONTEXT: FILE 6/6 - main.py
-
 import os
 import pandas as pd
 import streamlit as st
@@ -133,28 +131,28 @@ if csv_file:
                                 x_data=df_total_interval_latency['timestamp'],
                                 y_data=df_total_interval_latency['total_avg_latency'],
                                 x_label='Timestamp',
-                                y_label='Total Average Latency (s)',
+                                y_label='Total Average Latency',
                                 title='Total Average Latency Over Time',
                                 plot_type='dot'
                             )
 
                         visualize_high_latency_periods(filtered_df, [selected_interval_tuple])
 
+            # Plot Hop Incremental Latency
             if plot_hop:
                 with col1:
                     for hop_number in selected_hops:
                         df_hop_latency = filtered_df[filtered_df['hop_number'] == hop_number]
                         df_hop_latency = df_hop_latency.groupby('timestamp')['avg'].mean().reset_index()
                         df_hop_latency.rename(columns={'avg': 'incremental_latency'}, inplace=True)
+
                         plot_data(
                             x_data=df_hop_latency['timestamp'],
                             y_data=df_hop_latency['incremental_latency'],
                             x_label='Timestamp',
-                            y_label='Incremental Latency (s)',
+                            y_label='Incremental Latency (ms)',
                             title=f'Incremental Latency for Hop {hop_number} Over Time'
                         )
 
 else:
     st.info("Please upload your traceroute logs or select a folder to begin analysis.")
-
-# END CONTEXT: FILE 6/6

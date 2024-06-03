@@ -9,11 +9,24 @@ def plot_data(x_data, y_data, x_label, y_label, title, plot_type='line'):
         ax.plot(x_data, y_data, label=title)
     elif plot_type == 'bar':
         ax.bar(x_data, y_data, label=title)
+    
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     ax.set_title(title)
     ax.legend()
     ax.grid(True)
+    
+    # Dynamic Y-axis scaling
+    max_y = max(y_data)
+    if max_y >= 60000:  # Scale to minutes
+        ax.set_ylabel(y_label + ' (minutes)')
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'{x / 60000:.1f}'))
+    elif max_y >= 1000:  # Scale to seconds
+        ax.set_ylabel(y_label + ' (seconds)')
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'{x / 1000:.1f}'))
+    else:
+        ax.set_ylabel(y_label + ' (ms)')
+    
     plt.xticks(rotation=45)
     st.pyplot(fig)
 
@@ -25,11 +38,11 @@ def suggest_high_latency_periods(df_total_latency, min_threshold, max_threshold,
 
 def visualize_high_latency_periods(df_all, high_latency_intervals, print_full_content=False):
     for interval in high_latency_intervals:
-        start_time, end_time = interval
-        df_high_latency = df_all[(df_all['timestamp'] >= start_time) & (df_all['timestamp'] <= end_time)]
+        timestamp = interval
+        df_high_latency = df_all[df_all['timestamp'] == timestamp]
         
         if print_full_content:
-            print(f"\nHigh latency data for interval {start_time} to {end_time}:")
+            print(f"\nHigh latency data for interval {timestamp}:")
             print(df_high_latency)
         
         hop_numbers = df_high_latency['hop_number'].unique()
@@ -45,7 +58,7 @@ def visualize_high_latency_periods(df_all, high_latency_intervals, print_full_co
             y_data=incremental_latencies,
             x_label='Hop Number',
             y_label='Incremental Latency (ms)',
-            title=f'Incremental Latency for High Latency Interval: {start_time} to {end_time}',
+            title=f'Incremental Latency for High Latency Interval: {timestamp}',
             plot_type='bar'
         )
 
@@ -55,6 +68,6 @@ def plot_total_avg_latency_over_time(df_total_latency):
         x_data=df_total_latency['timestamp'],
         y_data=df_total_latency['total_avg_latency'],
         x_label='Timestamp',
-        y_label='Total Average Latency (ms)',
+        y_label='Total Average Latency',
         title='Total Average Latency Over Time'
     )

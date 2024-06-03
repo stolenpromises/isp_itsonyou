@@ -71,28 +71,35 @@ if csv_file:
             if suggest_high_latency:
                 with col2:
                     high_latency_periods = suggest_high_latency_periods(df_total_filtered_latency, min_latency, max_latency, top_n=num_high_latency_periods)
+                    high_latency_periods = high_latency_periods.sort_values(by='timestamp')
                     st.write(high_latency_periods)
                     if visualize_high_latency and not high_latency_periods.empty:
                         st.subheader("High Latency Analysis Options")
-                        interval_options = [f"{row['timestamp']} to {row['timestamp']}" for _, row in high_latency_periods.iterrows()]
+                        interval_options = high_latency_periods['timestamp'].tolist()
                         selected_interval = st.selectbox("Select High Latency Interval", interval_options, key='select_interval')
                         interval_minutes = st.number_input("Select +/- Interval (minutes)", min_value=1, max_value=120, value=10, key='interval_minutes')
 
-                        start_time_str, end_time_str = selected_interval.split(" to ")
-                        selected_interval_tuple = (start_time_str, end_time_str)
+                        start_time_str = selected_interval.strftime('%Y-%m-%d %H:%M:%S')
+                        selected_interval_tuple = start_time_str
 
-                        df_high_latency = filtered_df[(filtered_df['timestamp'] >= start_time_str) & (filtered_df['timestamp'] <= end_time_str)]
+                        df_high_latency = filtered_df[(filtered_df['timestamp'] == selected_interval)]
                         st.write(df_high_latency)
 
                         start_interval = (pd.to_datetime(start_time_str) - pd.Timedelta(minutes=interval_minutes)).strftime('%Y-%m-%d %H:%M:%S')
-                        end_interval = (pd.to_datetime(end_time_str) + pd.Timedelta(minutes=interval_minutes)).strftime('%Y-%m-%d %H:%M:%S')
+                        end_interval = (pd.to_datetime(start_time_str) + pd.Timedelta(minutes=interval_minutes)).strftime('%Y-%m-%d %H:%M:%S')
                         df_interval_latency = filtered_df[(filtered_df['timestamp'] >= start_interval) & (filtered_df['timestamp'] <= end_interval)]
 
                         df_total_interval_latency = df_interval_latency.groupby('timestamp')['avg'].sum().reset_index()
                         df_total_interval_latency.rename(columns={'avg': 'total_avg_latency'}, inplace=True)
 
                         with col1:
-                            plot_total_avg_latency_over_time(df_total_interval_latency)
+                            plot_data(
+                                x_data=df_total_interval_latency['timestamp'],
+                                y_data=df_total_interval_latency['total_avg_latency'],
+                                x_label='Timestamp',
+                                y_label='Total Average Latency',
+                                title='Total Average Latency Over Time'
+                            )
 
                         visualize_high_latency_periods(filtered_df, [selected_interval_tuple])
 

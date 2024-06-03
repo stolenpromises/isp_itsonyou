@@ -3,6 +3,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import streamlit as st
 
 def suggest_high_latency_periods(df_total_latency, min_threshold, max_threshold, top_n=5):
     """

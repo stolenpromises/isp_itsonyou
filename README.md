@@ -3,7 +3,8 @@
 ## Overview
 
 Analyze traceroute logs to identify and visualize network latency patterns...
-Prove to the ISP that ITS ON THEM!
+- Prove to the ISP that ITS ON THEM!
+- Save yourself a few bucks
 
 ## Features
 

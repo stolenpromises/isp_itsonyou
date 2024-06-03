@@ -2,7 +2,8 @@
 
 ## Overview
 
-This project analyzes traceroute logs to identify and visualize network latency patterns.
+Analyze traceroute logs to identify and visualize network latency patterns...
+Prove to the ISP that ITS ON THEM!
 
 ## Features
 
@@ -20,9 +21,8 @@ isp_itsonyou/
 ├── log_parser.py                 # Script for importing and parsing logs
 ├── main.py                       # Streamlit-based user interface for the project
 ├── README.md                     # Project documentation
-│
 └── traceroute_logs/              # Directory containing traceroute log files
-    ├── sample   # Sample logs for testing
+└── sample                        # Sample logs for testing
 ```
 ## Installation
 
@@ -127,5 +127,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 - Calculate and visualize latency percentiles (e.g., 95th, 99th).
 
 ---
-
-This updated README provides more thorough instructions for generating traceroute logs and ensures users understand the required format for the logs. Additionally, it organizes the project structure and dependencies more clearly.

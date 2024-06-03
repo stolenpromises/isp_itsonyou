@@ -1,66 +1,113 @@
-# ISP Itsonyou Project
+# ISP Itsonyou
 
 ## Overview
-This project analyzes network performance issues using traceroute logs. The primary goals are to identify periods of high latency, determine the source of slowdowns, and visualize the data.
+
+This project analyzes traceroute logs to identify and visualize network latency patterns.
+
+## Features
+
+- Load traceroute logs from a folder and convert them to CSV.
+- Upload CSV files for analysis.
+- Visualize total average latency over time.
+- Identify and visualize high latency periods.
+- Plot incremental latency for specified hops.
 
 ## Folder Structure
 ```
 isp_itsonyou/
 │
 ├── traceroute_analysis.py        # Main script for analyzing traceroute logs
-├── log_import.py                 # Script for importing and parsing logs
-├── streamlit_interface.py        # Streamlit-based user interface for the project
+├── log_parser.py                 # Script for importing and parsing logs
+├── main.py                       # Streamlit-based user interface for the project
 ├── README.md                     # Project documentation
 │
 └── traceroute_logs/              # Directory containing traceroute log files
-    ├── first_12_hours_logs.zip   # Sample logs for testing
-    └── [other log files]         # Additional log files
+    ├── sample   # Sample logs for testing
+```
+## Installation
+
+1. Clone the repository:
+
+```sh
+git clone <repository-url>
+cd isp_itsonyou
 ```
 
-## Goals and Objectives
+2. Create a virtual environment and activate it:
 
-### Identify Periods of High Latency:
-
-- Analyze the logs to identify periods when the total latency exceeds normal levels.
-- Specifically, we are interested in identifying times when the total latency exceeds 2000ms, which indicates a significant slowdown.
-
-### Identify the Source of Slowdown:
-
-- Determine which network hops are contributing most to the latency during these periods.
-- We expect that the slowdown is often caused by one or more of the first 1-5 hops, which are typically within the ISP's network infrastructure.
-
-### Visualize the Data:
-
-- Create plots to visually represent the average total latency over time.
-- Generate individual hop latency plots to pinpoint where the slowdowns occur within the network path.
-
-## Background:
-
-- The network connection in question is a 300/10 Mbps connection.
-- Intermittent issues have been observed, characterized by periods of very high latency (up to 2000ms) and reduced throughput (below 30 Mbps).
-
-## Logs Description:
-
-The logs are traceroute outputs saved in text files with timestamps in their filenames. Each log file follows this format:
-
-```
-/home/nathanm/traceroute_logs/mtr_20240521195616.txt
+```sh
+python -m venv venv
+source venv/bin/activate  # On Windows use `venv\Scripts\activate`
 ```
 
+3. Install the required dependencies:
+
+```sh
+pip install -r requirements.txt
 ```
-Start: 2024-05-21T19:56:16-0500
-HOST: nathandebiansecure                      Loss%   Snt   Last   Avg  Best  Wrst StDev
-  1.|-- SAX2V1R.lan                              0.0%    60    0.4   0.7   0.3   1.4   0.2
-  2.|-- syn-159-111-244-013.inf.spectrum.com     0.0%    60    6.4   6.6   2.4  34.0   6.0
-  3.|-- lag-56.wxhctxbn01h.netops.charter.com    0.0%    60    6.2   6.7   4.0  15.8   2.0
-  4.|-- lag-38.rcr01ftwptxzp.netops.charter.com  0.0%    60    7.8   8.8   6.3  12.3   1.5
-  5.|-- lag-806.bbr01dllstx.netops.charter.com   0.0%    60   10.7  12.3   9.4  14.3   1.5
-  6.|-- lag-801.prr01dllstx.netops.charter.com   0.0%    60   10.6  15.1  10.6 132.0  15.4
-  7.|-- 72.14.197.124                            0.0%    60   14.9  13.5  10.9  16.1   1.4
-  8.|-- 108.170.225.147                          0.0%    60   13.5  13.2  10.7  16.0   1.4
-  9.|-- 142.251.60.47                            0.0%    60   11.5  12.3  10.2  14.7   1.3
- 10.|-- dns.google                               0.0%    60   10.2  13.2  10.1  52.6   5.3
+
+## Usage
+
+1. Ensure you have traceroute logs in the expected format.
+2. Run the Streamlit application:
+
+```sh
+streamlit run main.py
 ```
+
+3. Load your logs or CSV file using the sidebar.
+4. Configure your analysis options and visualize the results.
+
+## Generating Traceroute Logs
+
+To generate traceroute logs, you can use the following example script to automate the process. This script will run `traceroute` every minute and save the output to a log file with a timestamp.
+
+### Script to Generate Traceroute Logs
+
+Save the following script as `generate_traceroute_logs.sh` and make it executable:
+
+```sh
+#!/bin/bash
+
+# Create the directory for traceroute logs if it doesn't exist
+mkdir -p traceroute_logs
+
+while true; do
+    # Get the current date and time
+    timestamp=$(date +%Y%m%d%H%M%S)
+    
+    # Run traceroute and save the output to a log file
+    traceroute google.com > traceroute_logs/traceroute_log_$timestamp.txt
+    
+    # Wait for 1 minute before running the next traceroute
+    sleep 60
+done
+```
+
+Make the script executable:
+
+```sh
+chmod +x generate_traceroute_logs.sh
+```
+
+Run the script to start generating logs:
+
+```sh
+./generate_traceroute_logs.sh
+```
+
+### Important Notes
+
+- Ensure that the log files are saved in the `traceroute_logs` directory as shown in the script.
+- Each log file should be named with the timestamp format `traceroute_log_YYYYMMDDHHMMSS.txt`.
+
+## Sample Data
+
+Sample logs and a sample CSV are available in the `parsed_logs` and `traceroute_logs` folders respectively.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Dependencies
 - Python 3.x
@@ -68,27 +115,8 @@ HOST: nathandebiansecure                      Loss%   Snt   Last   Avg  Best  Wr
 - Matplotlib
 - Streamlit
 
-### streamlist_interface.py ###
-Functions:
-- main - Main function to run the Streamlit interface
-
-### traceroute_analysis.py
-Functions:
-- suggest_high_latency_periods - Suggest periods of high latency based on total latency
-- visualize_high_latency_periods - Visualize periods of high latency
-- plot_total_avg_latency_over_time - Plot the average total latency over time
-- main - Main function to run the analysis
-
-### log_import.py
-Functions:
-- parse_traceroute_log 
-- extract_logs
 
 ## Metrics to Implement:
-
-### Hop Latency Histograms:
-
-- Visualize the distribution of latencies for individual hops.
 
 ### Packet Loss Analysis:
 
@@ -98,26 +126,6 @@ Functions:
 
 - Calculate and visualize latency percentiles (e.g., 95th, 99th).
 
-## LLM Opening Prompt
-(To be used in event a new conversation needs to be started, i.e., all context is lost)
+---
 
-Assist with software development. This project analyzes network performance issues using traceroute logs. The primary goals are to identify periods of high latency, determine the source of slowdowns, and visualize the data. You should write code to execute in your environment with my logs as test inputs. Later I will execute locally on my Debian KDE system. As it sits now, I am executing via Windows 11 and VS Code. We don't want to do too many steps in a single turn. Let's keep it simple.
-
-1. Begin by extracting the contents of the zip file and reading in the entirety of README.md file to understand the project. Development is now being conducted alongside your environment in VS Studio Code on a Windows 11 system.
-
-2. Do not suggest executing code locally, due to errors in your environment. Rather, troubleshoot why the errors in your environment are happening via breaking the process into smaller steps, using print statements, etc. We will probably go for a complete reset of the coding environment and/or a new conversation before resorting to local execution on my end.
-
-3. With this opening prompt a zip of the current project status has been attached.
-
-4. Extract the project without adding anything to the name, i.e., no _unzipped or anything. Just use the folder isp_itsonyou (via extraction) as the root folder for the project.
-
-5. Get the README.md file and read it to understand the project.
-
-6. When reading in files, such as README.md, it is not necessary to redisplay them for me in a human readable format. Single line read ins which work for you are all that is needed, in most cases. I don't want to use up too much context window re-displaying text which has already been read in.
-
-7. When listing the content of log folders after extraction, only list the first 5 or so files. This is to save context window space.
-
-8. Sample logs can be found under isp_itsonyou\first_72hr_logs.zip
-
-9. Run a test on a portion of the logs to see if the code is working as expected up to its last documented functional state.
-```
+This updated README provides more thorough instructions for generating traceroute logs and ensures users understand the required format for the logs. Additionally, it organizes the project structure and dependencies more clearly.

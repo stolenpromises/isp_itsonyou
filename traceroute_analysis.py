@@ -1,52 +1,15 @@
-# BEGIN CONTEXT: FILE 4/6 - traceroute_analysis.py
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import streamlit as st
 
 def suggest_high_latency_periods(df_total_latency, min_threshold, max_threshold, top_n=5):
-    """
-    Suggest high latency periods based on the defined thresholds.
-
-    Parameters
-    ----------
-    df_total_latency : pd.DataFrame
-        DataFrame containing total average latency data.
-    min_threshold : float
-        Minimum latency threshold to identify high latency periods.
-    max_threshold : float
-        Maximum latency threshold to identify high latency periods.
-    top_n : int, optional
-        Number of top high latency periods to suggest (default is 5).
-
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame containing the suggested high latency periods.
-    """
     high_latency_periods = df_total_latency[(df_total_latency['total_avg_latency'] >= min_threshold) & 
                                             (df_total_latency['total_avg_latency'] <= max_threshold)]
     high_latency_periods = high_latency_periods.sort_values(by='total_avg_latency', ascending=False)
     return high_latency_periods.head(top_n)
 
 def visualize_high_latency_periods(df_all, high_latency_intervals, print_full_content=False):
-    """
-    Visualize individual hop latencies and incremental latencies for high latency periods.
-
-    Parameters
-    ----------
-    df_all : pd.DataFrame
-        DataFrame containing parsed traceroute data.
-    high_latency_intervals : list of tuples
-        List of tuples, each containing a start and end timestamp for the high latency intervals.
-    print_full_content : bool, optional
-        Flag to print full content of high latency data (default is False).
-
-    Returns
-    -------
-    None
-    """
     for interval in high_latency_intervals:
         start_time, end_time = interval
         df_high_latency = df_all[(df_all['timestamp'] >= start_time) & (df_all['timestamp'] <= end_time)]
@@ -74,28 +37,6 @@ def visualize_high_latency_periods(df_all, high_latency_intervals, print_full_co
         )
 
 def plot_data(x_data, y_data, x_label, y_label, title, plot_type='line'):
-    """
-    General function to plot data.
-
-    Parameters
-    ----------
-    x_data : list or pd.Series
-        Data for the x-axis.
-    y_data : list or pd.Series
-        Data for the y-axis.
-    x_label : str
-        Label for the x-axis.
-    y_label : str
-        Label for the y-axis.
-    title : str
-        Title of the plot.
-    plot_type : str, optional
-        Type of plot to generate ('line', 'bar', 'dot'), default is 'line'.
-
-    Returns
-    -------
-    None
-    """
     fig, ax = plt.subplots(figsize=(12, 6))
     
     if plot_type == 'line':
@@ -110,7 +51,23 @@ def plot_data(x_data, y_data, x_label, y_label, title, plot_type='line'):
     ax.set_title(title)
     ax.legend()
     ax.grid(True)
-    plt.xticks(rotation=45)
+
+    # Dynamic y-axis scaling
+    y_unit = format_y_axis(y_data)
+    if y_unit == 'minutes':
+        y_data = y_data / 60000
+        y_label += ' (minutes)'
+    elif y_unit == 'seconds':
+        y_data = y_data / 1000
+        y_label += ' (seconds)'
+    
     st.pyplot(fig)
 
-# END CONTEXT: FILE 4/6 - traceroute_analysis.py
+def format_y_axis(y_data):
+    max_y = max(y_data)
+    if max_y >= 60000:
+        return 'minutes'
+    elif max_y >= 1000:
+        return 'seconds'
+    else:
+        return 'ms'

@@ -127,5 +127,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 - Calculate and visualize latency percentiles (e.g., 95th, 99th).
 
 ---
-
-This updated README provides more thorough instructions for generating traceroute logs and ensures users understand the required format for the logs. Additionally, it organizes the project structure and dependencies more clearly.
